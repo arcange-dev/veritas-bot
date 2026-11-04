@@ -1,0 +1,35 @@
+{
+  "_comment": "Copy to .mcp.json ONLY after you have verified each server yourself. Every entry below requires credentials or a pinned package version. Nothing here is active by default.",
+  "mcpServers": {
+    "github": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-github"],
+      "env": {
+        "GITHUB_PERSONAL_ACCESS_TOKEN": "${GITHUB_MCP_TOKEN}"
+      },
+      "_scope": "Use a fine-grained PAT read-only on selected repos. Never an org-wide admin token."
+    },
+    "supabase": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "@supabase/mcp-server-supabase@latest", "--read-only"],
+      "env": {
+        "SUPABASE_ACCESS_TOKEN": "${SUPABASE_ACCESS_TOKEN}"
+      },
+      "_scope": "Read-only. Migrations are applied by Django, not by this MCP."
+    },
+    "context7": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "@upstash/context7-mcp@latest"],
+      "_scope": "Public documentation lookup. No credentials needed."
+    },
+    "playwright": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "@playwright/mcp@latest", "--isolated"],
+      "_scope": "E2E verification against localhost only."
+    }
+  }
+}

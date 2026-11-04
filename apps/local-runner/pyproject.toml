@@ -1,0 +1,28 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "superagent-runner"
+version = "0.1.0"
+description = "SuperAgent local runner: outbound-only code execution on your own machine."
+requires-python = ">=3.10"
+dependencies = [
+  "websockets>=12.0",
+  "httpx>=0.27",
+  "platformdirs>=4.2",
+  "pydantic>=2.5",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0", "pytest-asyncio>=0.24"]
+
+[project.scripts]
+superagent-runner = "superagent_runner.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["superagent_runner*"]
+
+[tool.pytest.ini_options]
+testpaths = ["superagent_runner/tests"]
+asyncio_mode = "auto"

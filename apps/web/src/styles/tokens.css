@@ -1,0 +1,92 @@
+/*
+ * Veritas Bot design tokens. Values are read directly from the Figma file
+ * ("02 — Design Tokens"), not approximated. Names keep the existing --bg-* /
+ * --text-* aliases so current components pick the new brand up unchanged.
+ *
+ * Spacing 4/8/12/16/24/32/48/80/96 · radius 6/10/16/pill · border 1px ·
+ * focus ring 2px with a 2px offset.
+ */
+:root {
+  /* Dark / engineering graphite */
+  --bg-base: #0b0e14;          /* page */
+  --bg-raised: #111318;        /* surface */
+  --bg-overlay: #171c26;       /* secondary surface */
+  --bg-elevated: #202735;      /* raised surface */
+  --border-subtle: #2b3443;    /* hairline border */
+  --border-strong: #3a4558;
+  --text-primary: #f8fafc;
+  --text-secondary: #a1aab8;
+  --text-muted: #687386;
+  --accent: #3b82f6;           /* primary action / focus */
+  --accent-soft: #60a5fa;
+  --cyan: #22d3ee;             /* brand accent */
+  --ok: #22c55e;
+  --warn: #f59e0b;
+  --danger: #ef4444;
+  --info: #38bdf8;
+  --ok-tint: #10291f;
+  --danger-tint: #301a21;
+  --warn-tint: #302618;
+  --info-tint: #14233d;
+
+  --radius-sm: 6px;
+  --radius: 10px;
+  --radius-lg: 16px;
+  --radius-pill: 100px;
+
+  --focus-ring: 0 0 0 2px var(--bg-base), 0 0 0 4px var(--accent);
+
+  /* Glass: an optional layer ON TOP of the flat Figma components. The Figma
+     file itself is flat (hairlines, no blur); glass was added at the owner's
+     request, so every glass value lives here and can be switched off in one
+     place with data-glass="off". */
+  --glass-bg: rgba(23, 28, 38, 0.55);
+  --glass-bg-strong: rgba(32, 39, 53, 0.72);
+  --glass-border: rgba(248, 250, 252, 0.10);
+  --glass-highlight: rgba(248, 250, 252, 0.06);
+  --glass-blur: 18px;
+  --glass-saturate: 140%;
+  --shadow-panel: 0 1px 0 rgba(255, 255, 255, 0.04), 0 12px 32px rgba(0, 0, 0, 0.40);
+  --shadow-glow: 0 0 0 1px rgba(34, 211, 238, 0.35), 0 8px 28px rgba(34, 211, 238, 0.16);
+
+  --dur-fast: 90ms;
+  --dur-base: 180ms;
+  --ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+  color-scheme: dark;
+}
+
+/* Light / engineering daylight: contrast-adjusted counterparts, not an inversion. */
+[data-theme="light"] {
+  --bg-base: #f5f7fb;
+  --bg-raised: #ffffff;
+  --bg-overlay: #eef2f7;
+  --bg-elevated: #e5eaf2;
+  --border-subtle: #cbd5e1;
+  --border-strong: #94a3b8;
+  --text-primary: #101827;
+  --text-secondary: #475569;
+  --text-muted: #64748b;
+  --accent: #1d4ed8;
+  --accent-soft: #2563eb;
+  --cyan: #0891b2;
+  --ok: #15803d;
+  --warn: #92400e;
+  --danger: #b91c1c;
+  --info: #0369a1;
+  --ok-tint: #dcfce7;
+  --danger-tint: #fee2e2;
+  --warn-tint: #fef3c7;
+  --info-tint: #e0f2fe;
+
+  --glass-bg: rgba(255, 255, 255, 0.62);
+  --glass-bg-strong: rgba(255, 255, 255, 0.82);
+  --glass-border: rgba(16, 24, 39, 0.10);
+  --glass-highlight: rgba(255, 255, 255, 0.7);
+  --shadow-panel: 0 1px 2px rgba(16, 24, 40, 0.06), 0 10px 28px rgba(16, 24, 40, 0.08);
+  --shadow-glow: 0 0 0 1px rgba(29, 78, 216, 0.30), 0 8px 24px rgba(29, 78, 216, 0.14);
+  color-scheme: light;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root { --dur-fast: 0ms; --dur-base: 0ms; }
+}

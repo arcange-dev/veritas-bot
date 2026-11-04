@@ -1,0 +1,61 @@
+# Local development only. Production runs on Render + Supabase + Daytona.
+name: superagent
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: superagent
+      POSTGRES_PASSWORD: superagent
+      POSTGRES_DB: superagent
+    ports: ["5432:5432"]
+    volumes: ["pgdata:/var/lib/postgresql/data"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U superagent"]
+      interval: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    command: ["redis-server", "--appendonly", "yes"]
+    ports: ["6379:6379"]
+    volumes: ["redisdata:/data"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      retries: 10
+
+  api:
+    build:
+      context: ./apps/api
+      dockerfile: ../../infrastructure/docker/api.Dockerfile
+    env_file: [.env]
+    command: python manage.py runserver 0.0.0.0:8000
+    ports: ["8000:8000"]
+    volumes: ["./apps/api:/app"]
+    depends_on:
+      postgres: {condition: service_healthy}
+      redis: {condition: service_healthy}
+
+  worker:
+    build:
+      context: ./apps/api
+      dockerfile: ../../infrastructure/docker/api.Dockerfile
+    env_file: [.env]
+    command: celery -A config worker -l info -Q default,agents,execution
+    volumes: ["./apps/api:/app"]
+    depends_on: [redis, postgres]
+
+  web:
+    build:
+      context: ./apps/web
+      dockerfile: ../../infrastructure/docker/web.Dockerfile
+    environment:
+      VITE_API_BASE_URL: http://localhost:8000
+    ports: ["5173:5173"]
+    volumes: ["./apps/web:/app", "/app/node_modules"]
+    depends_on: [api]
+
+volumes:
+  pgdata:
+  redisdata:

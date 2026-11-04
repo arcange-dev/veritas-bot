@@ -1,0 +1,133 @@
+# Veritas Bot: Render blueprint.
+#
+# Deploy: Render dashboard -> New -> Blueprint -> pick this repository. Render reads this file.
+# Read docs/DEPLOY_RENDER.md BEFORE the first deploy: it has two manual steps that this file
+# cannot do for you (create the unprivileged DB role; paste your Supabase values).
+#
+# Two database URLs, deliberately:
+#   MIGRATE_DATABASE_URL  the database OWNER. Used only by the pre-deploy migrate step.
+#   DATABASE_URL          the unprivileged `veritas_app` role. Used by the api and worker.
+# An owner or superuser connection BYPASSES row-level security, so the app must never use it.
+
+databases:
+  - name: veritas-db
+    plan: basic-256mb
+    databaseName: veritas
+    user: veritas_owner
+    postgresMajorVersion: "16"
+
+services:
+  - type: keyvalue
+    name: veritas-redis
+    plan: starter
+    ipAllowList: []                       # private network only
+    maxmemoryPolicy: noeviction          # Celery needs queued jobs to never be evicted
+
+  # ASGI, not WSGI: the runner relay and session streams are WebSockets.
+  - type: web
+    name: veritas-api
+    runtime: python
+    plan: starter
+    rootDir: apps/api
+    buildCommand: pip install -r requirements.txt && python manage.py collectstatic --no-input
+    preDeployCommand: python manage.py migrate --no-input
+    startCommand: daphne -b 0.0.0.0 -p $PORT config.asgi:application
+    healthCheckPath: /healthz
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.12.7"
+      - key: DJANGO_SETTINGS_MODULE
+        value: config.settings.prod
+      - key: DJANGO_SECRET_KEY
+        generateValue: true
+      - key: DJANGO_ALLOWED_HOSTS
+        value: veritas-api.onrender.com
+      - key: CORS_ALLOWED_ORIGINS
+        value: https://veritas-web.onrender.com
+      - key: MIGRATE_DATABASE_URL          # owner: migrations only
+        fromDatabase: { name: veritas-db, property: connectionString }
+      - key: DATABASE_URL                  # runtime role: set after running the bootstrap script
+        sync: false
+      - key: REDIS_URL
+        fromService: { type: keyvalue, name: veritas-redis, property: connectionString }
+      - key: CELERY_BROKER_URL
+        fromService: { type: keyvalue, name: veritas-redis, property: connectionString }
+      - key: CELERY_RESULT_BACKEND
+        fromService: { type: keyvalue, name: veritas-redis, property: connectionString }
+      - key: BYOK_ENCRYPTION_KEYS
+        sync: false
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_ANON_KEY
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: SUPABASE_JWT_SECRET
+        sync: false
+      - key: SUPABASE_JWKS_URL
+        sync: false
+
+  - type: worker
+    name: veritas-worker
+    runtime: python
+    plan: starter
+    rootDir: apps/api
+    buildCommand: pip install -r requirements.txt
+    startCommand: celery -A config worker -Q agents,execution,default --concurrency 4 --max-tasks-per-child 50
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.12.7"
+      - key: DJANGO_SETTINGS_MODULE
+        value: config.settings.prod
+      - key: DJANGO_SECRET_KEY
+        fromService: { type: web, name: veritas-api, envVarKey: DJANGO_SECRET_KEY }
+      - key: DATABASE_URL                  # same unprivileged runtime role as the api
+        sync: false
+      - key: REDIS_URL
+        fromService: { type: keyvalue, name: veritas-redis, property: connectionString }
+      - key: CELERY_BROKER_URL
+        fromService: { type: keyvalue, name: veritas-redis, property: connectionString }
+      - key: CELERY_RESULT_BACKEND
+        fromService: { type: keyvalue, name: veritas-redis, property: connectionString }
+      - key: BYOK_ENCRYPTION_KEYS
+        sync: false
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_ANON_KEY
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: SUPABASE_JWT_SECRET
+        sync: false
+      - key: SUPABASE_JWKS_URL
+        sync: false
+
+  - type: web
+    name: veritas-web
+    runtime: static
+    rootDir: apps/web
+    buildCommand: npm ci && npm run build
+    staticPublishPath: dist
+    routes:
+      - type: rewrite                      # single-page app: every path serves index.html
+        source: /*
+        destination: /index.html
+    headers:
+      - path: /*
+        name: X-Content-Type-Options
+        value: nosniff
+      - path: /*
+        name: Referrer-Policy
+        value: same-origin
+      - path: /assets/*
+        name: Cache-Control
+        value: public, max-age=31536000, immutable
+    envVars:
+      - key: VITE_API_BASE_URL
+        value: https://veritas-api.onrender.com
+      - key: VITE_WS_BASE_URL
+        value: wss://veritas-api.onrender.com
+      - key: VITE_SUPABASE_URL
+        sync: false
+      - key: VITE_SUPABASE_ANON_KEY
+        sync: false
