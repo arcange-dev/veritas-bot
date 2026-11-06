@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 from django.utils import timezone
-from rest_framework import viewsets
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework import filters, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
@@ -15,8 +16,11 @@ from projects.serializers import ProjectSerializer
 
 class ProjectViewSet(TenantBoundMixin, viewsets.ModelViewSet):
     serializer_class = ProjectSerializer
+    # `search_fields` is only honoured by SearchFilter, which is NOT a default backend here.
+    # Declaring the fields without the backend (as this view originally did) silently ignores ?search=.
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter]
     filterset_fields = ["execution_preference"]
-    search_fields = ["name", "slug"]
+    search_fields = ["name", "slug", "description"]
 
     def get_permissions(self):
         if self.request.method in {"GET", "HEAD", "OPTIONS"}:

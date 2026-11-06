@@ -227,6 +227,9 @@ describe("ProjectPage", () => {
     await userEvent.click(del);
     await waitFor(() => expect(screen.getByTestId("where")).toHaveTextContent("/projects"));
     expect(calls.filter((c) => c.method === "DELETE")).toHaveLength(1);
+    // The deleted project must not be requested again: that would be a 404 for an id we just removed.
+    const afterDelete = calls.slice(calls.findIndex((c) => c.method === "DELETE") + 1);
+    expect(afterDelete.filter((c) => c.method === "GET" && c.url.endsWith(`/projects/${PROJECT.id}/`))).toHaveLength(0);
   });
 
   it("explains a missing or foreign project instead of showing a blank page", async () => {

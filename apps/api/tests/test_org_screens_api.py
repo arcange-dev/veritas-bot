@@ -205,3 +205,35 @@ def test_another_orgs_project_is_a_404_for_archive_and_delete(api, org, other_or
     assert api.post(f"{base(org)}/projects/{p.id}/archive/").status_code == 404
     assert api.delete(f"{base(org)}/projects/{p.id}/").status_code == 404
     assert Project.objects.filter(pk=p.id).exists()
+
+
+# ------------------------------------ project search ------------------------------------
+def _names(resp):
+    return sorted(p["name"] for p in rows(resp))
+
+
+def test_search_filters_by_name_slug_and_description_and_is_case_insensitive(api, org):
+    for name, desc in (("Orbit Commerce", "storefront"), ("Atlas API", "order services"), ("Docs Site", "guides for Orbit")):
+        api.post(f"{base(org)}/projects/", {"name": name, "description": desc}, format="json")
+    url = f"{base(org)}/projects/"
+    assert _names(api.get(url)) == ["Atlas API", "Docs Site", "Orbit Commerce"]
+    assert _names(api.get(url, {"search": "atlas"})) == ["Atlas API"]
+    assert _names(api.get(url, {"search": "ORBIT"})) == ["Docs Site", "Orbit Commerce"]      # name + description
+    assert _names(api.get(url, {"search": "orbit-commerce"})) == ["Orbit Commerce"]          # slug
+    assert _names(api.get(url, {"search": "zzzz"})) == []
+
+
+def test_search_never_crosses_tenants_and_respects_the_archive_filter(api, org, other_org):
+    Project.objects.create(organization=other_org, name="Atlas Secret", slug="atlas-secret", created_by=other_org.created_by)
+    pid = api.post(f"{base(org)}/projects/", {"name": "Atlas API"}, format="json").json()["id"]
+    assert _names(api.get(f"{base(org)}/projects/", {"search": "atlas"})) == ["Atlas API"]
+    api.post(f"{base(org)}/projects/{pid}/archive/")
+    assert _names(api.get(f"{base(org)}/projects/", {"search": "atlas"})) == []
+    assert _names(api.get(f"{base(org)}/projects/", {"search": "atlas", "archived": "1"})) == ["Atlas API"]
+
+
+def test_search_treats_special_characters_as_plain_text(api, org):
+    api.post(f"{base(org)}/projects/", {"name": "Plain Project"}, format="json")
+    for hostile in ("%", "_", "'; drop table projects_project; --", "\\", "a" * 500):
+        assert api.get(f"{base(org)}/projects/", {"search": hostile}).status_code == 200
+    assert _names(api.get(f"{base(org)}/projects/")) == ["Plain Project"]

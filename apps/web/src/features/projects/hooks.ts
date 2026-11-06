@@ -48,6 +48,15 @@ export function useArchiveProject(orgId: string, id: string) {
 }
 
 export function useDeleteProject(orgId: string, id: string) {
+  const qc = useQueryClient();
   const invalidate = useInvalidate(orgId);
-  return useMutation({ mutationFn: () => projectsApi.remove(orgId, id), onSuccess: invalidate });
+  return useMutation({
+    mutationFn: () => projectsApi.remove(orgId, id),
+    onSuccess: async () => {
+      // Forget the deleted project first. Refetching it (as invalidate would) asks the server
+      // for an id that no longer exists while its page is still on screen, and gets a 404.
+      qc.removeQueries({ queryKey: projectKeys.one(orgId, id) });
+      await invalidate();
+    },
+  });
 }
