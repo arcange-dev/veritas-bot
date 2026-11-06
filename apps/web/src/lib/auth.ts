@@ -36,3 +36,10 @@ export async function signInWithOtp(email: string): Promise<void> {
 export async function signOut(): Promise<void> {
   await supabase().auth.signOut();
 }
+
+/** Subscribe to sign-in/out/refresh. Returns an unsubscribe function. */
+export function onAuthChange(listener: (signedIn: boolean) => void): () => void {
+  if (!isConfigured) return () => undefined;
+  const { data } = supabase().auth.onAuthStateChange((_event, session) => listener(Boolean(session)));
+  return () => data.subscription.unsubscribe();
+}

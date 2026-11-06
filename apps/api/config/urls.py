@@ -5,6 +5,7 @@ from rest_framework.routers import DefaultRouter
 from core.views import HealthView
 from execution.views import DeviceViewSet, RunnerClaimView
 from integrations.urls import org_urlpatterns as integration_org_urls, public_urlpatterns as integration_public_urls
+from accounts.views import MeView, MyOrganizationsView
 from audit.views import AuditLogViewSet, NotificationViewSet
 from orchestration.views import ApprovalViewSet, RunViewSet
 from projects.dashboard import DashboardSummaryView
@@ -29,6 +30,8 @@ urlpatterns = [
     path("api/v1/runners/claim/", RunnerClaimView.as_view(), name="runner-claim"),
     # Tenancy is resolved from the URL's org_id, which the permission classes read.
     path("api/v1/", include(integration_public_urls)),
+    path("api/v1/me/", MeView.as_view(), name="me"),
+    path("api/v1/me/organizations/", MyOrganizationsView.as_view(), name="me-organizations"),
     path("api/v1/orgs/<uuid:org_id>/dashboard/summary/", DashboardSummaryView.as_view(), name="dashboard-summary"),
     path("api/v1/orgs/<uuid:org_id>/", include(integration_org_urls)),
     path("api/v1/orgs/<uuid:org_id>/", include(router.urls)),

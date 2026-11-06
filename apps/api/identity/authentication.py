@@ -19,6 +19,8 @@ from django.core.exceptions import ImproperlyConfigured
 from rest_framework.authentication import BaseAuthentication, get_authorization_header
 from rest_framework.exceptions import AuthenticationFailed
 
+from core.rls import login_context
+
 from .models import Profile
 
 logger = logging.getLogger(__name__)
@@ -113,16 +115,22 @@ class SupabaseJWTAuthentication(BaseAuthentication):
         if not sub:
             raise AuthenticationFailed("Token missing subject")
 
-        profile, _ = Profile.objects.get_or_create(
-            supabase_user_id=sub,
-            defaults={
-                "email": email,
-                "display_name": claims.get("user_metadata", {}).get("full_name", "")[:120],
-            },
-        )
-        if not profile.email and email:
-            profile.email = email
-            profile.save(update_fields=["email"])
+        # The token is verified, so `sub` is trustworthy. Bind it as the login subject so the
+        # profile can be found or created under row-level security (core migration 0005).
+        try:
+            with login_context(subject=sub):
+                profile, _ = Profile.objects.get_or_create(
+                    supabase_user_id=sub,
+                    defaults={
+                        "email": email,
+                        "display_name": str((claims.get("user_metadata") or {}).get("full_name", ""))[:120],
+                    },
+                )
+                if not profile.email and email:
+                    profile.email = email
+                    profile.save(update_fields=["email"])
+        except (ValueError, TypeError) as exc:      # a subject that is not a UUID
+            raise AuthenticationFailed("Token subject is not valid") from exc
 
         request.jwt_claims = claims
         return (profile, token)

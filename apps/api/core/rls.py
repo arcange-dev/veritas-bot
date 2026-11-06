@@ -188,3 +188,20 @@ def bound() -> Iterator[None]:
     with transaction.atomic():
         _set(profile_id, org_id)
         yield
+
+
+@contextlib.contextmanager
+def login_context(*, subject) -> Iterator[None]:
+    """Bind ONLY the verified token subject, for finding or creating that user's profile.
+
+    Call this after the token's signature, audience and expiry have been verified and
+    nowhere else. It does not identify a profile or a tenant; it lets exactly one
+    supabase_user_id be looked up or inserted (see core migration 0005). The setting is
+    transaction-local, so it is gone when the block ends.
+    """
+    value = _as_uuid(subject)
+    with transaction.atomic():
+        if connection.vendor == "postgresql":
+            with connection.cursor() as cur:
+                cur.execute("SELECT set_config('app.auth_subject', %s, true)", [value])
+        yield

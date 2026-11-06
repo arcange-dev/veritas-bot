@@ -5,6 +5,10 @@ import { DashboardPage } from "@/features/dashboard/DashboardPage";
 import { LoginPage } from "@/features/auth/LoginPage";
 import { ProvidersPage } from "@/features/providers/ProvidersPage";
 import { StudioPage } from "@/features/studio/StudioPage";
+import { ProjectsPage } from "@/features/projects/ProjectsPage";
+import { NewProjectPage } from "@/features/projects/NewProjectPage";
+import { ProjectPage } from "@/features/projects/ProjectPage";
+import { SessionGate } from "@/features/session/SessionGate";
 
 const navItem =
   "rounded-sm px-2.5 py-1.5 text-[12.5px] text-secondary transition-colors duration-[var(--dur-fast)] hover:text-primary";
@@ -18,6 +22,9 @@ export default function App() {
           <NavLink to="/dashboard" className={({ isActive }) => cn(navItem, isActive && "bg-overlay text-primary")}>
             Dashboard
           </NavLink>
+          <NavLink to="/projects" className={({ isActive }) => cn(navItem, isActive && "bg-overlay text-primary")}>
+            Projects
+          </NavLink>
           <NavLink to="/studio" className={({ isActive }) => cn(navItem, isActive && "bg-overlay text-primary")}>
             Studio
           </NavLink>
@@ -29,14 +36,19 @@ export default function App() {
       </header>
 
       <main className="min-h-0 flex-1">
+        <SessionGate>
         <Routes>
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/dashboard" element={<DashboardPage />} />
+          <Route path="/projects" element={<ProjectsPage />} />
+          <Route path="/projects/new" element={<NewProjectPage />} />
+          <Route path="/projects/:id" element={<ProjectPage />} />
           <Route path="/studio" element={<StudioPage />} />
           <Route path="/providers" element={<ProvidersPage />} />
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Routes>
+        </SessionGate>
       </main>
     </div>
   );

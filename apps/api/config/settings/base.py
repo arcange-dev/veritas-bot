@@ -45,6 +45,7 @@ INSTALLED_APPS = [
     "providers",
     "projects",
     "integrations",
+    "accounts",
     "orchestration",
     "tools",
     "execution",

@@ -3,6 +3,7 @@
  * one place normalises the error envelope, one place parses the contract.
  */
 import { z } from "zod";
+import { parseErrorDetail, type FieldErrors } from "./errors";
 import { env } from "./env";
 import { getAccessToken } from "./auth";
 
@@ -12,6 +13,8 @@ export class ApiError extends Error {
     readonly code: string,
     message: string,
     readonly requestId?: string,
+    /** Per-field validation messages, when the server sent them (HTTP 400). */
+    readonly fields: FieldErrors = {},
   ) {
     super(message);
     this.name = "ApiError";
@@ -49,15 +52,13 @@ export async function apiFetch<T>(
       detail?: unknown;
       request_id?: string;
     };
-    const detail =
-      typeof payload.detail === "string"
-        ? payload.detail
-        : `Request failed (${response.status})`;
+    const parsed = parseErrorDetail(payload.detail, response.status);
     throw new ApiError(
       response.status,
       payload.code ?? "error",
-      detail,
+      parsed.message,
       payload.request_id,
+      parsed.fields,
     );
   }
 
