@@ -160,8 +160,33 @@ DAYTONA_API_URL = env("DAYTONA_API_URL", "https://app.daytona.io/api")
 DAYTONA_TARGET_REGION = env("DAYTONA_TARGET_REGION", "eu")
 
 GITHUB_APP_ID = env("GITHUB_APP_ID")
+GITHUB_APP_SLUG = env("GITHUB_APP_SLUG")
 GITHUB_APP_PRIVATE_KEY_PATH = env("GITHUB_APP_PRIVATE_KEY_PATH")
 GITHUB_APP_WEBHOOK_SECRET = env("GITHUB_APP_WEBHOOK_SECRET")
+
+
+def _github_private_key() -> str:
+    """The App private key as text.
+
+    Hosting platforms like Render hand over secrets as environment variables, not files, so
+    GITHUB_APP_PRIVATE_KEY (the PEM text, with literal \\n for newlines) is preferred. A file path is
+    still honoured for local development. Returns "" when neither is set (GitHub then reads as not configured).
+    """
+    inline = env("GITHUB_APP_PRIVATE_KEY")
+    if inline:
+        return inline.replace("\\n", "\n")
+    path = GITHUB_APP_PRIVATE_KEY_PATH
+    if path:
+        try:
+            return open(path, encoding="utf-8").read()
+        except OSError:
+            return ""
+    return ""
+
+
+GITHUB_APP_PRIVATE_KEY = _github_private_key()
+# The names integrations/github.py reads; defined here so one env var drives both.
+GITHUB_WEBHOOK_SECRET = GITHUB_APP_WEBHOOK_SECRET
 
 STATIC_URL = "/static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"

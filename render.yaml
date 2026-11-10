@@ -66,6 +66,14 @@ services:
         sync: false
       - key: SUPABASE_JWKS_URL
         sync: false
+      - key: GITHUB_APP_ID                 # optional: leave blank until you create the GitHub App
+        sync: false
+      - key: GITHUB_APP_SLUG
+        sync: false
+      - key: GITHUB_APP_PRIVATE_KEY        # PEM text; write newlines as \n
+        sync: false
+      - key: GITHUB_APP_WEBHOOK_SECRET
+        sync: false
 
   - type: worker
     name: veritas-worker
