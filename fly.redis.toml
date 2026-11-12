@@ -1,0 +1,23 @@
+# Redis for the Celery broker and the Django Channels layer.
+# Private only: no [http_service], so Fly assigns no public IP and it is reachable
+# only over the private network at veritas-redis.internal:6379.
+app = "veritas-redis"
+primary_region = "jnb"
+
+[build]
+  image = "redis:7-alpine"
+
+[env]
+  # No eviction: losing a queued job silently is worse than refusing new writes.
+  REDIS_ARGS = "--appendonly yes --maxmemory-policy noeviction"
+
+[[mounts]]
+  source = "redis_data"
+  destination = "/data"
+
+[processes]
+  redis = "redis-server --appendonly yes --maxmemory-policy noeviction"
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "256mb"

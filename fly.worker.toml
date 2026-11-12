@@ -1,0 +1,18 @@
+# Celery worker. Same image as the API, different process: no public HTTP, so this
+# app has no [http_service] block and gets no public IP.
+app = "veritas-worker"
+primary_region = "jnb"
+
+[build]
+  dockerfile = "infrastructure/docker/api.Dockerfile"
+
+[env]
+  DJANGO_SETTINGS_MODULE = "config.settings.prod"
+
+# A worker must never sleep: a queued run would sit unclaimed. No auto_stop here.
+[processes]
+  worker = "celery -A config worker -l info -Q default,agents,execution --concurrency=2"
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "256mb"

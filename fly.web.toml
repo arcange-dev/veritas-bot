@@ -1,0 +1,29 @@
+# The built SPA, served by nginx. VITE_* values are compiled in at build time,
+# so changing them requires a redeploy, not just a restart.
+app = "veritas-web"
+primary_region = "jnb"
+
+[build]
+  dockerfile = "infrastructure/docker/web.Dockerfile"
+  # Baked into the bundle at build time. Fill these before `fly deploy`.
+  [build.args]
+    VITE_API_BASE_URL = "https://veritas-api.fly.dev"
+    VITE_WS_BASE_URL = "wss://veritas-api.fly.dev"
+
+[http_service]
+  internal_port = 8080
+  force_https = true
+  auto_stop_machines = false
+  auto_start_machines = true
+  min_machines_running = 1
+
+  [[http_service.checks]]
+    interval = "15s"
+    timeout = "5s"
+    grace_period = "10s"
+    method = "GET"
+    path = "/"
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "256mb"

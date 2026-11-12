@@ -1,4 +1,4 @@
-# Local development only. Production runs on Render + Supabase + Daytona.
+# Local development only. Production: see docs/DEPLOY_FLY_NEON.md (Fly + Neon).
 name: superagent
 
 services:

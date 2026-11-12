@@ -14,7 +14,7 @@ apps/api            Django 5 + DRF (auth, tenancy, BYOK, orchestration, tools, e
 apps/local-runner   Standalone Python agent installed on a user machine (outbound only)
 packages/contracts  Shared API contract types, generated from the Pydantic models
 packages/shared     Framework-free helpers used by web and runner
-infrastructure      Docker, GitHub Actions   (Render blueprint: render.yaml at the repo root)
+infrastructure      Docker images, GitHub Actions   (blueprints: render.yaml, fly.*.toml)
 docs                Architecture, API, security, deployment
 .claude             Engineering environment: 15 skills, 11 subagents, rules, hooks
 ```
@@ -60,6 +60,13 @@ python tooling/validate_claude_env.py                               # skills + s
 ```
 
 ## Deploying
+
+Two paths are prepared, neither has been applied to a live account:
+
+- **Fly.io + Neon** — four Fly apps plus a Neon Postgres. See
+  [`docs/DEPLOY_FLY_NEON.md`](docs/DEPLOY_FLY_NEON.md). This is the recommended
+  path: it fits the WebSocket relay, the Celery worker, Redis and Postgres at once.
+- **Render** — see [`docs/DEPLOY_RENDER.md`](docs/DEPLOY_RENDER.md).
 
 `render.yaml` is a Render blueprint that passes Render's official schema. It has **not** been applied to a
 Render account. Read [`docs/DEPLOY_RENDER.md`](docs/DEPLOY_RENDER.md) first: it has a required step that creates
