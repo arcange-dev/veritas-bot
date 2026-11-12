@@ -94,8 +94,11 @@ fly apps create veritas-api
 fly deploy --config fly.api.toml
 ```
 
-Do not expect a healthy first boot yet: without secrets it cannot start. That is
-step 5. The first deploy still needs to happen so the app exists for `fly secrets`.
+The first deploy exists so the app is created and you can set secrets on it. Do not
+trust it yet: **a missing variable does not stop the app.** The settings helper
+returns an empty string instead of raising, so a half-configured API still boots and
+serves, and `/healthz` only checks the database and Redis. A green health check does
+not prove sign-in works. Step 7 covers how to check that properly.
 
 ---
 
@@ -177,6 +180,15 @@ curl -s https://veritas-api.fly.dev/healthz
   are in the same region and the Redis app is running.
 - `database: error:*` → usually a bad password, a missing `sslmode=require`, or
   step 2 not done against the same database.
+
+`/healthz` does **not** test sign-in, so also confirm auth fails correctly rather
+than crashing:
+
+```bash
+curl -s -o /dev/null -w '%{http_code}\n' https://veritas-api.fly.dev/api/v1/me/
+```
+
+401 is correct (no token sent). A 500 means the login provider is not configured.
 
 Then in the browser at `https://veritas-web.fly.dev`:
 1. Sign in — this is the step that proves the login provider works.
